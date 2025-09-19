@@ -1,0 +1,160 @@
+function delay(ms) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve();
+        }, ms);
+    });
+}
+var previnput;
+var materiallist = ["caustic", "cp5", "labsa", "pvd salt", "salts(grade 1)", "scmc", "silicate", "carbomil soda", "soda ash light"];
+const template = {
+    shiftA: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 },
+    shiftB: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 },
+    shiftC: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 },
+    Daily: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 }
+};
+var silosdata = {};
+materiallist.forEach(m => {
+    silosdata[m] = JSON.parse(JSON.stringify(template));
+});
+console.log(silosdata);
+async function clickCalendarDate(day, month, year, shift) {
+    document.getElementsByClassName("mat-icon-no-color")[0].click();  // time panel open
+    shiftclass = `checkbox-${shift}`  // for class
+    function checkCheckboxById(id) {
+        const checkbox = document.querySelector(`#${id} input[type="checkbox"]`);
+        if (checkbox && !checkbox.checked) {
+            checkbox.click();
+        }
+    }
+    document.getElementsByClassName("mdc-button__label")[0].click();
+    function clickByText(text) {
+        const el = Array.from(document.querySelectorAll('.mat-calendar-body-cell-content'))
+            .find(e => e.textContent.trim().toLowerCase() === text.toLowerCase());
+        if (el) el.click();
+        else console.warn(`Element with text "${text}" not found`);
+    }
+    clickByText(year.toString());
+    clickByText(month);
+    clickByText(day.toString());
+    checkCheckboxById(shiftclass);
+    document.getElementsByClassName("mdc-button__label")[1].click();
+    document.getElementsByClassName("mdc-button__label")[0].click();
+}
+async function getQuantitySum() {
+    let quantities = document.querySelectorAll(".data-list-item .data-list-item-block:last-child");
+    let sum = 0;
+    quantities.forEach(q => {
+        let val = parseFloat(q.textContent.trim());
+        if (!isNaN(val)) sum += val;
+    });
+    return sum;
+}
+async function gettabledata(type) {
+    var classname = "data-silos-table";
+    var siloinput = 0;
+    document.getElementsByClassName("button")[1].click();
+    let tbl = document.querySelectorAll(`.${classname}`);
+    if (tbl.length > 0) {
+        if (type == "WB") {
+            siloinput = await getQuantitySum();
+        }
+        else if (type == "TANKFORM") {
+            var s = document.querySelectorAll(".data-silos-table tbody tr");
+            siloinput = Number(s[s.length - 1].getElementsByTagName("td")[1].textContent);
+        }
+        else if (type == "OUTPUT") {
+            let quantities = document.querySelectorAll(".data-list-item");
+            quantities.forEach(q => {
+                var result = q
+                if (result.innerHTML.includes("Quantity")) {
+                    var e = result.getElementsByClassName("data-list-item-block");
+                    siloinput += Number(e[1].innerHTML.trim());
+                }
+            });
+        }
+        return siloinput;
+    }
+}
+
+async function gettopinoutvalues(materiall, shiftl) {
+    await delay(500);
+    var repeatability=20;
+    while (true) {
+    var input = document.getElementsByClassName("value")[0].textContent.split("T")[0].trim();
+    var output = document.getElementsByClassName("value")[1].textContent.split("T")[0].trim();
+    var ismatched=previnput==input;
+        if (input!="-" && output!="-" && (!ismatched || repeatability==0)) {
+             input = Number(input);
+            output = Number(output);
+            silosdata[materiall][shiftl]["inputvalue"] = input;
+            silosdata[materiall][shiftl]["outputvalue"] = output;
+            return ;
+        }
+        else{
+           repeatability--;
+            await delay(1000);
+        }
+    }
+}
+async function getinvalues(materiall, shiftl) {
+    document.getElementsByClassName("button")[1].click();
+    await delay(1000);
+    while (true) {
+        var toggle = document.getElementsByClassName("list-content-block");
+        if (toggle.length > 0) {
+            toggle[0].click();
+            var input1 = await gettabledata("WB");
+            toggle[1].click();
+            var input2 = await gettabledata("TANKFORM");
+            toggle[2].click();
+            var output1 = await gettabledata("OUTPUT");
+            var input = input1 + input2;
+            var output = output1;
+            console.log("###################");
+            console.log(materiall);
+            console.log(shiftl);
+            console.log(input ? input.toFixed(2) : 0);
+            console.log(output ? output.toFixed(2) : 0);
+            silosdata[materiall][shiftl]["calculatedinput"] = input;
+            silosdata[materiall][shiftl]["calculatedoutout"] = output;
+            await gettopinoutvalues(materiall, shiftl);
+            console.log("OUT"+silosdata[materiall][shiftl]["outputvalue"]);
+            return;
+        }
+        else {
+            await delay(100);
+        }
+    }
+}
+async function getinoutvalues(material = "caustic") {
+    // dummay
+    var date = "18-sept-2025";
+    date.split("-");
+    var shifts = [1, 2, 3, 4];
+    var shiftdetail = ["shiftA", "shiftB", "shiftC", "Daily"];
+    for (let i = 1; i <= 4; i++) {
+        await clickCalendarDate(Number(date[0]), date[1], Number(date[2]), i);
+        await delay(1000);
+        for (let j = 0; j < materiallist.length; j++) {
+            var material1 = materiallist[j];
+            document.getElementsByClassName("mat-mdc-select-arrow-wrapper")[2].click();
+            let material = document.getElementsByClassName("mdc-list-item__primary-text");
+            for (let k = 0; k < material.length; k++) {
+                var item = material[k];
+                var itemcontent = item.textContent;
+                if (material1.trim().toLowerCase() == itemcontent.trim().toLowerCase()) {
+                    previnput=document.getElementsByClassName("value")[0].textContent.split("T")[0].trim();
+                    item.click();
+
+                    document.getElementsByClassName("mdc-button__label")[0].click();
+                    await getinvalues(material1, shiftdetail[i - 1]);
+                }
+            }
+        }
+    }
+    console.log(silosdata);
+}
+
+await getinoutvalues();
+
