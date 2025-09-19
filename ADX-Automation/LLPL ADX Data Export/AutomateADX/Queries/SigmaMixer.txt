@@ -1,0 +1,125 @@
+let buffer_start = start - 30m;
+let SigmaMixer_TagMap = datatable(Zone:string, Tag:string)
+[
+// Sigma-Mixer-01
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Colour",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Frisis",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade1_Sigmamixer_batch_Glycrine",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Liquid_Minor",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade_1_MIX1_MIXER_PAS_SP_PV",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Perfume",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade_1_MIX1_MIXER_Starch_SP_PV",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_Sigmamixer_batch_800500066581_Noodle",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MIXER_1_LAURIC_STRING",
+  "Sigma-Mixer-01", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MX01_REWORK_600kg",
+  // Sigma-Mixer-02
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Colour",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Frisis",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_DTP",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Perfume",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_PSM_batch_TSP_CAS2_PWP_LLPL_800500066581_RM_STARCH",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_PSM_batch_TSP_CAS2_PWP_LLPL_800500066581_RM_PAS",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_Sigmamixer_batch_800500066581_Noodle",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 2_Sigma_batch_TSP_CAS2_PWP_LLPL_800500066581_Liquid_Minor",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MIXER_2_LAURIC_STRING",
+  "Sigma-Mixer-02", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MX02_REWORK_600kg",
+  // Sigma-Mixer-03
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Color",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Powder",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Dtp",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Perfume",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_CAS3_MIX3_STARCH_SP_PV",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_CAS3_MIX3_PAS_SP_PV",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Glycrine",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Lauric",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade3_Sigmamixer_batch_Noodle",
+  "Sigma-Mixer-03", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MX03_REWORK_600kg",
+  // Sigma-Mixer-04
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Color",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Powder",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Dtp",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Perfume",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_CAS4_MIX4_STARCH_SP_PV",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_CAS4_MIX4_PAS_SP_PV",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Glycrine",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Lauric",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade4_Sigmamixer_batch_Noodle",
+  "Sigma-Mixer-04", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MX04_REWORK_600kg",
+  // Sigma-Mixer-05
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade5_Sigmamixer_batch_Color",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade5_Sigmamixer_batch_Powder",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade5_Sigmamixer_batch_Minor",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade5_Sigmamixer_batch_Perfume",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.CAS_5_MX5_STARCH_SP_PV",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.CAS_5_MX5_PAS_SP_PV",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade5_Sigmamixer_batch_Glycrine",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MIXER_5_LAURIC_STRING",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade5_Sigmamixer_batch_Noodle",
+  "Sigma-Mixer-05", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MX05_REWORK_600kg",
+  // Sigma-Mixer-06
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Color",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Powder",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Minor",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Noodle",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Perfume",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_MIX6_MIXER_Starch_SP_PV",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_MIX6_MIXER_PAS_SP_PV",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Glycrine",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade6_Sigmamixer_batch_Noodle",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MIXER_6_LAURIC_STRING",
+  "Sigma-Mixer-06", "LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.MX06_REWORK_600kg"
+];
+let buffer_data = Common2
+| where TS between (buffer_start .. start)
+| where SiteId == 'LLPL'
+| join kind=inner (SigmaMixer_TagMap) on Tag
+| where isnotempty(Value)
+| sort by Tag, TS asc
+    | extend 
+        SP_Value = toreal(extract(@"SP:([\d\.]+)", 1, Value)),
+        PV_Value = toreal(extract(@"PV:([\d\.]+)", 1, Value)),
+        BatchNumber = toreal(extract(@"B:([\d\.]+)", 1, Value)),
+        Recipe = extract(@"R:([^,]+)", 1, Value),
+        Shift="1"
+    | summarize TS=arg_max(TS,*) by Tag,SiteId,MachineId;
+let main_data = Common2
+| where TS between (start .. end)
+| where SiteId == 'LLPL'
+| join kind=inner (SigmaMixer_TagMap) on Tag
+| where isnotempty(Value)
+| sort by Tag, TS asc
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2", "3")
+| extend
+            SP_Value = toreal(extract(@"SP:([\d\.]+)", 1, Value)),
+            PV_Value = toreal(extract(@"PV:([\d\.]+)", 1, Value)),
+            BatchNumber = toreal(extract(@"B:([\d\.]+)", 1, Value)),
+            Recipe = extract(@"R:([^,]+)", 1, Value)
+        | summarize SP_Value= max(SP_Value), PV_Value=max(PV_Value), TS=max(TS) by Tag, BatchNumber, Recipe, Shift, Zone;
+buffer_data
+| union main_data
+| sort by Tag, TS asc
+| extend BatchDiff = iff(prev(Tag) == Tag, BatchNumber - prev(BatchNumber), 0.0)
+| where BatchDiff != 0 and BatchNumber != 0
+| summarize
+    SP_Value = sum(SP_Value),
+    PV_Value = sum(PV_Value),
+    TS = max(TS),
+    BatchCount = countif(BatchDiff >= 0 or BatchDiff <= 0)
+  by Tag, Recipe, Shift, Zone
+| extend
+    SP_Value = round(SP_Value / 1000, 6),
+    PV_Value = round(PV_Value / 1000, 6),
+    Unique_Tag = trim(" ", strcat(Tag, "_", Shift, "_", Recipe)),
+    SP_Value_DS = dynamic(null),
+    PV_Value_DS = dynamic(null),
+    Diff = dynamic(null),
+    _Diff = dynamic(null),
+    BatchCount_DS = dynamic(null),
+    __Diff = dynamic(null)
+| project Tag, Unique_Tag, SP_Value, SP_Value_DS, Diff, PV_Value, PV_Value_DS, _Diff, Recipe, Shift, BatchCount, BatchCount_DS, __Diff, Zone

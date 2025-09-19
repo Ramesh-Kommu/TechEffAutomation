@@ -1,0 +1,69 @@
+let buffer_start = actual_start - 72h;
+Common2
+| where TS between (buffer_start .. end) and SiteId=='LLPL' and Tag == "TSPCAS3.Cascade3.Company_warehouse_bag_Dosing_Barcode"
+| extend 
+    Barcode = extract(@"^(\d+),", 1, Value),
+    PV_Value = toreal(extract(@"^\d+,([\d\.]+),", 1, Value)),
+    NoodleType = extract(@"^\d+,[\d\.]+,([^,]+)", 1, Value),
+    Silo_Number = toint(extract(@"^.*?,.*?,.*?,(\d+)$", 1, Value))
+| extend BatchCount = iff(strlen(Barcode) == 10, toint(substring(Barcode, 7, 3)), 0)
+| where toreal(Barcode) != 0 and isnotempty(NoodleType) and BatchCount!=0
+| where Silo_Number>=1
+| summarize arg_min(TS,Tag,Silo_Number,NoodleType) by Barcode,PV_Value
+| summarize PV_Value=max(PV_Value) by Barcode,TS,Tag,Silo_Number,NoodleType
+| summarize arg_min(TS,Tag,Silo_Number,NoodleType,PV_Value) by Barcode
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2", "3")
+| summarize PV_Value=max(PV_Value),TS=min(TS) by Tag,Barcode,Silo_Number,NoodleType,Shift
+| where TS >= actual_start
+| summarize PV_Value=sum(PV_Value/1000),TS=min(TS),BarCodes=make_set(Barcode) by Silo_Number,NoodleType,Shift
+| extend PV_Value=round(PV_Value,2),Tag = case(
+    Silo_Number == 1, "LLPL_WarehouseBaginToSilo_01",
+    Silo_Number == 2, "LLPL_WarehouseBaginToSilo_02",
+    Silo_Number == 3, "LLPL_WarehouseBaginToSilo_03",
+    Silo_Number == 4, "LLPL_WarehouseBaginToSilo_04",
+    Silo_Number == 5, "LLPL_WarehouseBaginToSilo_05",
+    Silo_Number == 6, "LLPL_WarehouseBaginToSilo_06",
+    "Unknown_Silo"
+)
+| union (
+    Common2
+| where TS between (buffer_start .. end) and SiteId=='LLPL' and Tag in ("TSPCAS3.Cascade3.Bagout_Stn_01_All_Details", "TSPCAS3.Cascade3.Bagout_Stn_02_All_Details")
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2", "3")
+| extend 
+    Barcode = extract(@"(\d+),", 1, Value),
+    SP_Value = toreal(extract(@",([\d\.]+),", 1, Value)),
+    PV_Value = toreal(extract(@",([\d\.]+),([\d\.]+),", 2, Value)),
+    NoodleType = extract(@",([\d\.]+),([\d\.]+),(.+)", 3, Value)
+| extend BarcodeDateStr = strcat("20", substring(Barcode, 5, 2), "-", substring(Barcode, 3, 2), "-", substring(Barcode, 1, 2))
+| extend BarcodeDate = todatetime(BarcodeDateStr)
+| where isnotnull(BarcodeDate)
+| where startofday(BarcodeDate) == startofday(actual_start)
+| extend BatchCount = iff(strlen(Barcode) == 10, toint(substring(Barcode, 7, 3)), 0)
+| where toreal(Barcode) != 0 and isnotempty(NoodleType) and BatchCount!=0
+| summarize PV_Value=max(PV_Value),SP_Value=max(SP_Value),TS=min(TS) by Tag,Barcode,NoodleType
+| summarize arg_min(TS, *) by Tag, Barcode
+| where TS >= actual_start
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2", "3")
+| summarize PV_Value=max(PV_Value),SP_Value=max(SP_Value),TS=min(TS) by Tag,Barcode,NoodleType,Shift
+| summarize PV_Value=sum(PV_Value/1000),SP_Value=sum(SP_Value/1000),TS=min(TS) by Tag,NoodleType,Shift
+| extend PV_Value=round(PV_Value,2),SP_Value=round(SP_Value,2)
+)
+| project Tag, Unique_Tag = trim(" ", strcat(Tag, "_", Shift, "_", NoodleType)), Shift, SP_Value,SP_Value_DS=dynamic(null),Diff=dynamic(null),PV_Value,PV_Value_DS=dynamic(null),_Diff=dynamic(null),Silo_Number, NoodleType

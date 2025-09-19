@@ -1,0 +1,75 @@
+Common2
+| where TS between (start .. end) and SiteId=='LLPL' and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_ACMASOAP_COUNTOUT_CAS1",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA2_SOAP_COUNTOUT_CAS2",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA3_SOAP_COUNTOUT_CAS2",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA4_SOAP_COUNTOUT_CAS2",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA5_SOAP_COUNTOUT_CAS3",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA6_SOAP_COUNTOUT_CAS3",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA7_SOAP_COUNTOUT_CAS4",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA8_SOAP_COUNTOUT_CAS4",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA9_SOAP_COUNTOUT_CAS4",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA10_SOAP_COUNTOUT_CAS5",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA11_SOAP_COUNTOUT_CAS5",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cas05_Wra_12_Soap_Count",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA13_SOAP_COUNTOUT_CAS6",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA14_SOAP_COUNTOUT_CAS6",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA15_SOAP_COUNTOUT_CAS6",
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_WRA16_SOAP_COUNTOUT_CAS6")
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by Tag, TS asc
+| where isnotempty(Value)
+| extend Value=toreal(Value)
+| extend Diff=iff(prev(Tag)==Tag and Shift==prev(Shift),Value-prev(Value),0.0)
+| extend Diff= iff(Diff<0,0.0,Diff)
+| summarize Value=sum(Diff) by Tag,Shift 
+| summarize Soap_CountOut=sum(Value) by Tag,Shift
+| union (Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+| where Tag in(
+"NEW_TSP.CAS5_6.WRA10_CURRENT_SOAP_GRAM",
+"NEW_TSP.CAS5_6.WRA11_CURRENT_SOAP_GRAM",
+"NEW_TSP.CAS5_6.WRA13_CURRENT_SOAP_GRAM",
+"NEW_TSP.CAS5_6.WRA14_CURRENT_SOAP_GRAM",
+"NEW_TSP.CAS5_6.WRA15_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA2_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA4_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA5_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA6_CURRENT_SOAP_GRAM",
+"NEW_TSP.CAS5_6.WRA12_CURRENT_SOAP_GRAM",
+"NEW_TSP.CAS5_6.WRA16_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.ACMA1_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA7_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA8_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA9_CURRENT_SOAP_GRAM",
+"TSPCAS3.Cascade3.WRA3_CURRENT_SOAP_GRAM")
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by Tag, TS asc
+| project TS, Tag, Value,Shift
+| where isnotempty(Value) and Value!=0
+| extend Value=toreal(Value)
+| summarize Soap_Gram=arg_max(Value,*) by Tag,Shift
+| project Tag, Soap_Gram,Shift)
+| extend Cascade = case(
+    Tag has "ACMASOAP" or Tag has "ACMA1", "C1",
+    Tag has "WRA2" or Tag has "WRA3" or Tag has "WRA4", "C2",
+    Tag has "WRA5" or Tag has "WRA6", "C3",
+    Tag has "WRA7" or Tag has "WRA8" or Tag has "WRA9", "C4",
+    Tag has "WRA10" or Tag has "WRA11" or Tag has "Wra_12", "C5",Tag has "WRA12", "C5",
+    Tag has "WRA13" or Tag has "WRA14" or Tag has "WRA15" or Tag has "WRA16", "C6",
+    "Unknown"
+)
+| extend Unique_Tag=trim(" ",strcat(Tag,"_",Shift))
+| project Tag, Unique_Tag,Shift,Soap_CountOut,Soap_CountOut_DS=dynamic(null),Diff=dynamic(null),Soap_Gram,Soap_Gram_DS=dynamic(null),_Diff=dynamic(null)

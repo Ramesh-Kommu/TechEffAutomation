@@ -1,0 +1,444 @@
+Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_MIXER1_BUFFERSILO_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| where isnotempty(Value)
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Buffer_silo_1_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="BufferSilo-01"
+| union ( Common2
+| where TS between (start .. end)  and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_MIXER2_BUFFERSILO_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| where isnotempty(Value)
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Buffer_silo_2_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="BufferSilo-02"
+)
+| union (Common2
+| where TS between (start .. end)  and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_MIXER3_BUFFERSILO_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| where isnotempty(Value)
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Buffer_silo_3_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="BufferSilo-03"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_MIXER4_BUFFERSILO_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where isnotempty(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Buffer_silo_4_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="BufferSilo-04"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_MIXER5_BUFFERSILO_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Buffer_silo_5_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="BufferSilo-05"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_NEWBAGOUT_SILO_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| where isnotempty(Value)
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Bagout_Buffer_silo_05_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="BufferSilo-06"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_DAY_SILO1_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| where isnotempty(Value)
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Day_silo_1_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="DaySilo-01"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_DAY_SILO2_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where Value!=0.0
+| where isnotempty(Value)
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Day_silo_2_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="DaySilo-02"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_DAY_SILO3_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Day_silo_3_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="DaySilo-03"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_DAY_SILO4_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where isnotempty(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Day_silo_4_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="DaySilo-04"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_DAY_SILO5_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where isnotempty(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Day_silo_5_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="DaySilo-05"
+)
+| union ( Common2
+| where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"LOGIX_cas2_pwp_llpl.cas2_pwp_llpl.Cascade 1_DAY_SILO6_LT")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS asc
+| extend Value=toreal(Value)
+| where isnotempty(Value)
+| where Value!=0.0
+| summarize Value=arg_min(TS,Value),Value2=arg_max(TS,Value) by bin(TS,2m), Tag,Shift
+| project TS,Tag,StartValue=Value1,EndValue=Value3,Shift
+| join kind=leftouter (
+    Common2 
+    | where TS between (start .. end) and SiteId=='LLPL'
+and Tag in (
+"TSPCAS3.Cascade3.Day_silo_6_type_of_noodle")
+| extend Shift = case(
+    (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+    (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+    (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+    (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2","3")
+| sort by TS,Tag asc
+| where isnotempty(Value)
+| summarize NoodleType=max(Value) by bin(TS,2m), Tag,Shift
+) on TS
+| where isnotempty(NoodleType)
+| summarize StartValue=arg_min(TS,StartValue),arg_max(TS,EndValue) by Tag,Shift,NoodleType
+| project SiteId="LLPL",Tag,StartValue=StartValue1, EndValue,Shift,NoodleType, Zone="DaySilo-06"
+)
+| extend StartValue=round(toreal(StartValue)/1000,6),EndValue=round(toreal(EndValue)/1000,6)
+| extend Unique_Tag=trim(" ",strcat(Tag,"_",Shift,"_",NoodleType))
+| project Tag,Unique_Tag,StartValue,StartValue_DS=dynamic(null),Diff=dynamic(null) ,EndValue,EndValue_DS=dynamic(null),_Diff=dynamic(null),Shift,NoodleType, Zone

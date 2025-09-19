@@ -1,0 +1,94 @@
+let buffer_start = start - 30m;
+let PSM_TagMap = datatable(Zone:string, Tag:string)
+[
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_AOS_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_Caustic_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_DFA_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_EDTA_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_EHDP_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_EMILY_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_Glycerine_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_Salt_Batch",
+    "PSM-01", "TSPCAS3.Cascade3.Psm_01_Water_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_AOS_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_Caustic_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_DFA_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_EDTA_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_EHDP_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_EMILY_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_Glycerine_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_Salt_Batch",
+    "PSM-02", "TSPCAS3.Cascade3.Psm_02_Water_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_AOS_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_Caustic_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_DFA_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_EDTA_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_EHDP_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_EMILY_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_Glycerine_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_Salt_Batch",
+    "PSM-03", "TSPCAS3.Cascade3.Psm_03_Water_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_AOS_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_Caustic_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_DFA_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_EDTA_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_EHDP_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_EMILY_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_Glycerine_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_Salt_Batch",
+    "PSM-04", "TSPCAS3.Cascade3.Psm_04_Water_Batch"
+];
+let buffer_data = Common2
+| where TS between (buffer_start .. start)
+| where SiteId == 'LLPL'
+| join kind=inner (PSM_TagMap) on Tag
+| where isnotempty(Value)
+| sort by Tag, TS asc
+| extend 
+    SP_Value = toreal(extract(@"SP:([\d\.]+)", 1, Value)),
+    PV_Value = toreal(extract(@"PV:([\d\.]+)", 1, Value)),
+    BatchNumber = toreal(extract(@"B:([\d\.]+)", 1, Value)),
+    NoodleName = extract(@"R:([^,]+)", 1, Value),
+    Shift = "1"
+| summarize TS = arg_max(TS, *) by Tag, SiteId, MachineId;
+let main_data = Common2
+| where TS between (start .. end)
+| where SiteId == 'LLPL'
+| join kind=inner (PSM_TagMap) on Tag
+| where isnotempty(Value)
+| sort by Tag, TS asc
+| extend Shift = case(
+        (datetime_part("Hour", TS) == 0 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 0 and datetime_part("Hour", TS) < 8) or
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) < 30), "1",
+        (datetime_part("Hour", TS) == 8 and datetime_part("Minute", TS) >= 30) or
+        (datetime_part("Hour", TS) > 8 and datetime_part("Hour", TS) < 16) or
+        (datetime_part("Hour", TS) == 16 and datetime_part("Minute", TS) < 30), "2", "3")
+| extend 
+    SP_Value = toreal(extract(@"SP:([\d\.]+)", 1, Value)),
+    PV_Value = toreal(extract(@"PV:([\d\.]+)", 1, Value)),
+    BatchNumber = toreal(extract(@"B:([\d\.]+)", 1, Value)),
+    NoodleName = extract(@"R:([^,]+)", 1, Value)
+| summarize SP_Value = max(SP_Value), PV_Value = max(PV_Value), TS = max(TS) by Tag, BatchNumber, NoodleName, Shift, Zone;
+buffer_data
+| union main_data
+| sort by Tag, TS asc
+| extend BatchDiff = iff(prev(Tag) == Tag, BatchNumber - prev(BatchNumber), 0.0)
+| where BatchDiff != 0 and BatchNumber !=0
+| summarize
+    SP_Value = sum(SP_Value),
+    PV_Value = sum(PV_Value),
+    TS = max(TS),
+    BatchCount = countif(BatchDiff >= 0 or BatchDiff <= 0)
+  by Tag, NoodleName, Shift, Zone
+| extend
+    SP_Value = round(SP_Value / 1000, 6),
+    PV_Value = round(PV_Value / 1000, 6),
+    Unique_Tag = trim(" ", strcat(Tag, "_", Shift, "_", NoodleName)),
+    SP_Value_DS = dynamic(null),
+    PV_Value_DS = dynamic(null),
+    Diff = dynamic(null),
+    _Diff = dynamic(null),
+    BatchCount_DS = dynamic(null),
+    __Diff = dynamic(null)
+| project Tag, Unique_Tag, SP_Value, SP_Value_DS, Diff, PV_Value, PV_Value_DS, _Diff, NoodleName, Shift, BatchCount, BatchCount_DS, __Diff, Zone
