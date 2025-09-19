@@ -1,0 +1,152 @@
+const zoneinfo = {
+    PSM: ["PSM_01", "PSM_02", "PSM_03", "PSM_04"],
+    BufferSilo: ["BufferSilo"],
+    SigmaMixer: ["SigmaMixer_01", "SigmaMixer_02", "SigmaMixer_03", "SigmaMixer_04", "SigmaMixer_05", "SigmaMixer_06"],
+    Cascade: ["Cascade_01", "Cascade_02", "Cascade_03", "Cascade_04", "Cascade_05", "Cascade_06"]
+};
+const ShiftData = ["Shift A", "Shift B", "Shift C"];
+const checkBoxes = ["checkbox-1", "checkbox-2", "checkbox-3"];
+function checkCheckboxById(id) {
+    const checkbox = document.querySelector(`#${id} input[type="checkbox"]`);
+    if (checkbox && !checkbox.checked) {
+        checkbox.click();
+    }
+}
+function clickEnterButton() {
+    const buttons = document.querySelectorAll('button.mdc-button');
+    for (let button of buttons) {
+        const label = button.querySelector('.mdc-button__label');
+        if (label && label.textContent.trim() === "ENTER>>") {
+            button.click();
+            return;
+        }
+    }
+}
+ 
+function clickSubmitButton() {
+    const submitButton = document.querySelector('button.submitBtn.mdc-button .mdc-button__label');
+    if (submitButton && submitButton.textContent.trim() === "Submit") {
+        submitButton.closest('button').click();
+        console.log('Submit button clicked.');
+    } else {
+        console.log('Submit button not found.');
+    }
+}
+ 
+function EnterAndSubmit() {
+    clickEnterButton();
+    clickSubmitButton();
+}
+ 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+ 
+csvdata = 'Zone,SubZone,Dosing Accuracy,Minor Loss,Leakage,Unassigned,LineLosses \n';
+async function runAutomation() {
+    for (const zone of Object.keys(zoneinfo)) {
+        const subzones = zoneinfo[zone];
+ 
+        for (const subzone of subzones) {
+            unassignedVariance = 0;
+            dosingAccuracy = 0;
+            minorLoss = 0;
+            leakage = 0;
+            lineloss = 0;
+            unassigned = 0;
+ 
+            for (let i = 0; i < ShiftData.length; i++) {
+                const shift = ShiftData[i];
+ 
+                // Select Zone
+                document.getElementsByClassName("mdc-line-ripple")[1].click();
+                Array.from(document.querySelectorAll("mat-option")).forEach(option => {
+                    const text = option.querySelector(".mdc-list-item__primary-text")?.textContent.trim();
+                    if (text === zone) {
+                        option.click();
+                    }
+                });
+ 
+                // Select SubZone
+                document.getElementsByClassName("mdc-line-ripple")[2].click();
+                Array.from(document.querySelectorAll("mat-option")).forEach(option => {
+                    const text = option.querySelector(".mdc-list-item__primary-text")?.textContent.trim();
+                    if (text === subzone) {
+                        option.click();
+                    }
+                });
+ 
+                // Select Shift
+                document.getElementsByClassName("mdc-line-ripple")[4].click();
+                checkCheckboxById(checkBoxes[i]);
+ 
+                EnterAndSubmit();
+                // console.log(`Zone: ${zone}, Subzone: ${subzone}, Shift: ${shift}`);
+ 
+                document.getElementsByClassName("toggle-btn")[2].click();
+                var repeatability = 30;
+                while (true) {
+                    repeatability--;
+                    var d = Array.from(document.getElementsByClassName("main-wrapper-variance"));
+                    if (d.length > 0) {
+                        console.log("Loaded, Extracting the Values")
+                        break;
+                    }
+                    else if (repeatability == 0) {
+                        break;
+                    }
+                    else {
+                        console.log("Still Loading Man Wait")
+                        await delay(500);
+                    }
+                }
+ 
+                const wrappers = Array.from(document.getElementsByClassName("main-wrapper-variance"));
+ 
+                wrappers.forEach(wrapper => {
+                    const reason = wrapper.querySelector(".text-area-div textarea")?.value.trim() || "N/A";
+                    var variance = wrapper.querySelectorAll(".tons_number")[1]?.innerText.split("T")[0].trim() || "N/A";
+                    variance = Number(variance);
+                    level1 = reason != "N/A" ? reason.split("-")[1] : "N/A";
+                    console.log(level1);
+                    console.log(variance);
+ 
+                    if (level1 == "Minor Loss") {
+                        minorLoss += variance;
+                    }
+                    else if (level1 == 'Line Losses') {
+                        lineloss += variance;
+                    }
+                    else if (level1 == "Dosing Accuracy") {
+                        dosingAccuracy += variance;
+                    }
+                    else if (level1 == 'Leakage') {
+                        leakage += variance;
+                    }
+                    else {
+                        unassignedVariance += variance;
+                    }
+                })
+            }
+            csvdata += `${zone},${subzone},${dosingAccuracy},${minorLoss},${leakage},${unassigned},${lineloss}` + "\n"
+ 
+ 
+            console.log(`Finished all shifts for subzone: ${subzone}`);
+            // await delay(3000); // Wait 3 seconds after subzone
+        }
+ 
+        console.log(`Finished all subzones for zone: ${zone}`);
+        // await delay(5000); // Wait 5 seconds after zone
+    }
+ 
+    // console.log("Automation complete.",csvdata);
+    const blob = new Blob([csvdata], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+ 
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "LLPL_LossVariance Tree.csv");
+    link.click();
+}
+ 
+runAutomation();
