@@ -1,0 +1,128 @@
+zoneinfo = ["Silos Storage Tanks", "Slurry Mixer", "Base Powder", "Boone Mixer", "Packaging"]
+let Mdata = ["Caustic", "CP5", "Labsa", "PVD Salt", "Salts(Grade 1)", "SCMC", "Silicate", "Carbomil Soda", "Soda Ash Light", "Base Powder"];
+const ShiftData = ["Shift A", "Shift B", "Shift C"];
+const checkBoxes = ["checkbox-1", "checkbox-2", "checkbox-3"];
+function checkCheckboxById(id) {
+    const checkbox = document.querySelector(`#${id} input[type="checkbox"]`);
+    if (checkbox && !checkbox.checked) {
+        checkbox.click();
+    }
+}
+function clickEnterButton() {
+    const buttons = document.querySelectorAll('button.mdc-button');
+    for (let button of buttons) {
+        const label = button.querySelector('.mdc-button__label');
+        if (label && label.textContent.trim() === "ENTER>>") {
+            button.click();
+            return;
+        }
+    }
+}
+function clickSubmitButton() {
+    const submitButton = document.querySelector('button.submitBtn.mdc-button .mdc-button__label');
+    if (submitButton && submitButton.textContent.trim() === "Submit") {
+        submitButton.closest('button').click();
+        console.log('Submit button clicked.');
+    } else {
+        console.log('Submit button not found.');
+    }
+}
+function EnterAndSubmit() {
+    clickEnterButton();
+    clickSubmitButton();
+}
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+csvdata = 'Zone,Shift,Dosing Accuracy,Unassigned,MinorLoss,EGA,Wastages' + "\n";
+async function runAutomation() {
+    for (const zone of zoneinfo) {
+        for (let i = 0; i < ShiftData.length; i++) {
+            const shift = ShiftData[i];
+            let DosingAccuracy = 0;
+            let Unassgined = 0;
+            let MinorLoss = 0;
+            let EGA = 0;
+            let Wastages = 0;
+            // Select Zone
+            document.getElementsByClassName("mdc-line-ripple")[1].click();
+            Array.from(document.querySelectorAll("mat-option")).forEach(option => {
+                const text = option.querySelector(".mdc-list-item__primary-text")?.textContent.trim();
+                if (text === zone) {
+                    option.click();
+                }
+            });
+            // Select Shift
+            document.getElementsByClassName("mdc-line-ripple")[3].click();
+            checkCheckboxById(checkBoxes[i]);
+            EnterAndSubmit();
+            // console.log(`Zone: ${zone}, Subzone: ${subzone}, Shift: ${shift}`);
+            await delay(1000); // Give time for data to populate
+            document.getElementsByClassName("toggle-btn")[2].click();
+            var repeatability=20;
+            while(true){
+                 repeatability--;
+                var d=Array.from(document.getElementsByClassName("main-wrapper-variance"));
+                if(d.length>0){
+                    console.log("Loaded, Extracting the Values")
+                    break;
+                }
+                else if(repeatability==0){
+                    break;
+                }
+                else{
+                    console.log("Still Loading Man Wait")
+                     await delay(500);
+                }
+            }
+
+            const wrappers = Array.from(document.getElementsByClassName("main-wrapper-variance"));
+            wrappers.forEach(wrapper => {
+                const material = wrapper.querySelector(".tons_number").innerText.split(" (")[0].trim() || "N/A";
+                const reason = wrapper.querySelector(".text-area-div textarea")?.value.trim() || "N/A";
+                var variance = wrapper.querySelectorAll(".tons_number")[1]?.innerText.split("T")[0].trim() || "N/A";
+                variance = Number(variance);
+                const isMDataMaterial = Mdata.includes(material);
+                console.log("ismdate", isMDataMaterial)
+                level1 = reason != "N/A" ? reason.split("-")[1] : "N/A";
+                console.log(level1)
+                if (level1 === 'Dosing Accuracy' && isMDataMaterial) {
+                    DosingAccuracy += variance;
+                }
+                if ((level1 === "N/A" && isMDataMaterial) || zone === 'Base Powder') {
+                    Unassgined += variance;
+                }
+                if (level1 === 'Minor Loss' && isMDataMaterial) {
+                    MinorLoss += variance;
+                }
+                if (level1 === 'EGA') {
+                    EGA += variance;
+                }
+                if (level1 === 'Wastages') {
+                    Wastages += variance;
+                }
+            });
+
+            csvdata += `${zone},${shift},${DosingAccuracy},${Unassgined},${MinorLoss},${EGA},${Wastages}` + "\n";
+            await delay(2000); // Wait before next shift
+        }
+        // csvdata += `${zone},${unassignedVariance}` + "\n"
+        console.log(csvdata);
+        await delay(10); // Wait 3 seconds after subzone
+
+        // console.log(`Finished all subzones for zone: ${zone}`);
+        await delay(10); // Wait 5 seconds after zone
+    }
+    // console.log("Automation complete.",csvdata);
+    const blob = new Blob([csvdata], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    const date = new Date();
+    const date1 = `${date.getDate()-1}-${date.getMonth() + 1}-${date.getFullYear()}`;
+    link.setAttribute("download", `${date1}_Haldia_LossVarianceValidation.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+runAutomation();
