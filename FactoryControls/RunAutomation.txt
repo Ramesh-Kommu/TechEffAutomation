@@ -1,0 +1,179 @@
+var materiallist = ["caustic", "cp5", "labsa", "pvd salt", "salts(grade 1)", "scmc", "silicate", "carbomil soda", "soda ash light"];
+var boonematerials = ["salts(grade 1)", "carbomil soda"];
+var wb = {};
+wb["total"] = { weighbridge: null, totalreceipt: null, standardqty: null, consumption: null, calculatedbalance: null, actualbalance: null, diff: null, tstartvalue: null };
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+}
+async function clickCalendarDate(day, month, year, shift) {
+  document.getElementsByClassName("mat-icon-no-color")[0].click();  // time panel open
+  shiftclass = `checkbox-${shift}`  // for class
+  function checkCheckboxById(id) {
+    const checkbox = document.querySelector(`#${id} input[type="checkbox"]`);
+    if (checkbox && !checkbox.checked) {
+      checkbox.click();
+    }
+  }
+  document.getElementsByClassName("mdc-button__label")[0].click();
+  function clickByText(text) {
+    const el = Array.from(document.querySelectorAll('.mat-calendar-body-cell-content'))
+      .find(e => e.textContent.trim().toLowerCase() === text.toLowerCase());
+    if (el) el.click();
+    else console.warn(`Element with text "${text}" not found`);
+  }
+  clickByText(year.toString());
+  clickByText(month);
+  clickByText(day.toString());
+  checkCheckboxById(shiftclass);
+  document.getElementsByClassName("mdc-button__label")[1].click();
+  document.getElementsByClassName("mdc-button__label")[0].click()
+}
+async function getTankSums() {
+  let startSum = 0, endSum = 0;
+  document.getElementsByClassName("button")[1].click();
+  document.getElementsByClassName("list-content-block")[1].click();
+  document.querySelectorAll("table.table-silos tbody tr").forEach(row => {
+    const label = row.querySelector(".headingCol")?.textContent || "";
+    const val = parseFloat(row.querySelector(".number")?.textContent) || 0;
+    if (label.includes("Start Reading:")) startSum += val;
+    if (label.includes("End Reading:")) endSum += val;
+  });
+  document.getElementsByClassName("button")[0].click();
+  return { startSum, endSum };
+}
+async function checkandassign(material) {
+  var istankvaluefound = false;
+  var isconsumptionfound = false;
+  if (!wb[material]) {
+    wb[material] = { weighbridge: null, totalreceipt: null, standardqty: null, consumption: null, calculatedbalance: null, actualbalance: null, diff: null, tstartvalue: null };
+  }
+  var repeatability = 20;
+  while (repeatability > 0) {
+    var item1 = document.getElementsByClassName("image-wrapper");
+    console.log(`item1  ${item1}`)
+    if (item1.length > 0) {
+      var item2 = item1[0].getElementsByClassName("label-text");
+      console.log(`item2  ${item2}`);
+      if (item2.length > 0) {
+        console.log(`item2  ${item2}`);
+        for (let i = 0; i < item2.length; i++) {
+          var item = item2[i];
+          if (item.textContent.includes("Tanker Value (Tons)") || item.textContent.includes("Lorry Value (Tons)")) {
+            var wbvalue = Number(item.textContent.split(")")[1]);
+            console.log(`material : ${material} : wb value : ${wbvalue}`);
+            wb[material]["weighbridge"] = wbvalue;
+            istankvaluefound = true;
+          }
+          if (item.textContent.includes("Output (Tons)")) {
+            var consumption = Number(item.textContent.split(")").pop());
+            wb[material]["consumption"] = consumption;
+            isconsumptionfound = true;
+          }
+        }
+      }
+      else {
+        await delay(1000);
+      }
+    }
+    else {
+      await delay(1000);
+    }
+    repeatability--;
+    if (isconsumptionfound && istankvaluefound) {
+      var { startSum, endSum } = await getTankSums();
+      wb[material]["tstartvalue"] = startSum;
+      wb[material]["actualbalance"] = endSum;
+      wb[material]["totalreceipt"] = wb[material]["weighbridge"] + startSum;
+      wb[material]["calculatedbalance"] = wb[material]["totalreceipt"] - wb[material]["consumption"];
+      wb[material]["diff"] = wb[material]["actualbalance"] - wb[material]["calculatedbalance"];
+      return;
+    }
+  }
+}
+async function MaterialClick(material1) {
+  document.getElementsByClassName("mat-mdc-select-arrow-wrapper")[2].click();
+  let material = document.getElementsByClassName("mdc-list-item__primary-text");
+  for (let i = 0; i < material.length; i++) {
+    var item = material[i];
+    var itemcontent = item.textContent;
+    if (material1.trim().toLowerCase() == itemcontent.trim().toLowerCase()) {
+      item.click();
+      document.getElementsByClassName("mdc-button__label")[0].click();
+      await checkandassign(material1);
+    }
+  }
+}
+async function getBOMStandards(classname, materialarray, mixertype) {
+  while (true) {
+    document.getElementsByClassName("button")[1].click();
+    let materialtbl = document.querySelectorAll(`.${classname}`);
+
+    if (materialtbl.length > 0) {
+      document.querySelectorAll(`.${classname} tbody tr`).forEach(row => {
+        const cols = row.querySelectorAll("td");
+        const material = cols[0]?.textContent.trim().toLowerCase();
+        const standard = parseFloat(cols[1]?.textContent.trim());
+        if (material && materialarray.includes(material)) {
+          if (mixertype == "Boone") {
+            wb[material]["standardqty"] = (wb[material]["standardqty"] ?? 0) + standard;
+          }
+          else {
+            wb[material]["standardqty"] = standard;
+          }
+        }
+      });
+      return;
+    }
+    else {
+      await delay(100);
+    }
+  }
+}
+function downloadWBCSV(wb, materiallist) {
+  materiallist.push("total");
+  let headers = ["material", "weighbridge", "totalreceipt", "standardQty", "consumption", "CalculatedBalance", "ActualBalance", "Diff"];
+  let rows = [headers.join(",")];
+  materiallist.forEach(m => {
+    let v = wb[m] || {};
+    rows.push([m, v.weighbridge != null ? v.weighbridge.toFixed(2) : "", v.totalreceipt != null ? v.totalreceipt.toFixed(2) : "", v.standardqty != null ? v.standardqty.toFixed(2) : "", v.consumption != null ? v.consumption.toFixed(2) : "", v.calculatedbalance != null ? v.calculatedbalance.toFixed(2) : "", v.actualbalance != null ? v.actualbalance.toFixed(2) : "", v.diff != null ? v.diff.toFixed(2) : ""
+    ].join(","));
+  })
+  let csvContent = rows.join("\n");
+  let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "wb_data.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+async function auto() {
+  document.getElementsByClassName("button")[0].click();
+  await clickCalendarDate(17, 'sept', 2025, 4);
+  await delay(2000);
+  for (let i = 0; i < materiallist.length; i++) {
+    await MaterialClick(materiallist[i]);
+  }
+  document.getElementsByClassName("tabsView")[1].click();
+  await getBOMStandards("materials_table1", materiallist, "Slurry");
+  document.getElementsByClassName("tabsView")[4].click();
+  await delay(1000);
+  await getBOMStandards("materials_table", boonematerials, "Boone");
+  console.log(wb);
+  // calculating totals
+  let vtypes = [ "weighbridge", "totalreceipt", "standardqty", "consumption", "calculatedbalance", "actualbalance", "diff"];
+  materiallist.forEach((m)=>{
+    var material=wb[m];
+    vtypes.forEach((v)=>{
+      wb["total"][v]+=material[v];
+    })
+  })
+  downloadWBCSV(wb, materiallist);
+}
+await auto();
+
+
