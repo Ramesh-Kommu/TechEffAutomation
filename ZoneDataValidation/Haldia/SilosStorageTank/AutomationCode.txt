@@ -8,10 +8,10 @@ function delay(ms) {
 var previnput;
 var materiallist = ["caustic", "cp5", "labsa", "pvd salt", "salts(grade 1)", "scmc", "silicate", "carbomil soda", "soda ash light"];
 const template = {
-    shiftA: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 },
-    shiftB: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 },
-    shiftC: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 },
-    Daily: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 }
+    shiftA: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0 ,isstartendmatched:false},
+    shiftB: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0,isstartendmatched:false },
+    shiftC: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0,isstartendmatched:false },
+    Daily: { calculatedinput: 0, calculatedoutout: 0, inputvalue: 0, outputvalue: 0,isstartendmatched:false }
 };
 var silosdata = {};
 materiallist.forEach(m => {
@@ -53,6 +53,7 @@ async function getQuantitySum() {
 async function gettabledata(type) {
     var classname = "data-silos-table";
     var siloinput = 0;
+    var startendsum=0;
     document.getElementsByClassName("button")[1].click();
     let tbl = document.querySelectorAll(`.${classname}`);
     if (tbl.length > 0) {
@@ -62,6 +63,14 @@ async function gettabledata(type) {
         else if (type == "TANKFORM") {
             var s = document.querySelectorAll(".data-silos-table tbody tr");
             siloinput = Number(s[s.length - 1].getElementsByTagName("td")[1].textContent);
+			for(let i of s){
+			   if(i.innerHTML.includes('Start - End') || i.innerHTML.includes('Shift Start - Shift End')){
+				   var vau=Number(i.getElementsByTagName('td')[1].textContent);
+                   console.log(vau);
+				   startendsum+=vau;
+			   }
+			}
+			// console.log(startendsum);
         }
         else if (type == "OUTPUT") {
             let quantities = document.querySelectorAll(".data-list-item");
@@ -73,26 +82,29 @@ async function gettabledata(type) {
                 }
             });
         }
-        return siloinput;
+        if(type!="TANKFORM")
+            return  siloinput;
+        else
+            return [siloinput,startendsum]
     }
 }
-
+ 
 async function gettopinoutvalues(materiall, shiftl) {
     await delay(500);
-    var repeatability=20;
+    var repeatability = 20;
     while (true) {
-    var input = document.getElementsByClassName("value")[0].textContent.split("T")[0].trim();
-    var output = document.getElementsByClassName("value")[1].textContent.split("T")[0].trim();
-    var ismatched=previnput==input;
-        if (input!="-" && output!="-" && (!ismatched || repeatability==0)) {
-             input = Number(input);
+        var input = document.getElementsByClassName("value")[0].textContent.split("T")[0].trim();
+        var output = document.getElementsByClassName("value")[1].textContent.split("T")[0].trim();
+        var ismatched = previnput == input;
+        if (input != "-" && output != "-" && (!ismatched || repeatability == 0)) {
+            input = Number(input);
             output = Number(output);
             silosdata[materiall][shiftl]["inputvalue"] = input;
             silosdata[materiall][shiftl]["outputvalue"] = output;
-            return ;
+            return;
         }
-        else{
-           repeatability--;
+        else {
+            repeatability--;
             await delay(1000);
         }
     }
@@ -106,7 +118,7 @@ async function getinvalues(materiall, shiftl) {
             toggle[0].click();
             var input1 = await gettabledata("WB");
             toggle[1].click();
-            var input2 = await gettabledata("TANKFORM");
+            var [input2,startendsum ]= await gettabledata("TANKFORM");
             toggle[2].click();
             var output1 = await gettabledata("OUTPUT");
             var input = input1 + input2;
@@ -114,12 +126,16 @@ async function getinvalues(materiall, shiftl) {
             console.log("###################");
             console.log(materiall);
             console.log(shiftl);
+            var differencevalue=Math.abs(input2-startendsum);
+            // console.log("%ctemp Difference matching","color:red;font-size:30px;");
+            // console.log(input2,startendsum,differencevalue)
             console.log(input ? input.toFixed(2) : 0);
             console.log(output ? output.toFixed(2) : 0);
             silosdata[materiall][shiftl]["calculatedinput"] = input;
             silosdata[materiall][shiftl]["calculatedoutout"] = output;
+            silosdata[materiall][shiftl]["isstartendmatched"] = differencevalue<0.3;
             await gettopinoutvalues(materiall, shiftl);
-            console.log("OUT"+silosdata[materiall][shiftl]["outputvalue"]);
+            console.log("OUT" + silosdata[materiall][shiftl]["outputvalue"]);
             return;
         }
         else {
@@ -130,12 +146,15 @@ async function getinvalues(materiall, shiftl) {
 async function getinoutvalues(material = "caustic") {
     // dummay
     var date = "18-sept-2025";
-    date.split("-");
+    date = date.split("-");
     var shifts = [1, 2, 3, 4];
     var shiftdetail = ["shiftA", "shiftB", "shiftC", "Daily"];
+     console.log("%c Let's Start Scrapping SILOS STORAGE TANK","color:orange;font-size:30px;")
     for (let i = 1; i <= 4; i++) {
+        console.log(date[0], date[1], date[2], i);
         await clickCalendarDate(Number(date[0]), date[1], Number(date[2]), i);
-        await delay(1000);
+       
+        await delay(3000);
         for (let j = 0; j < materiallist.length; j++) {
             var material1 = materiallist[j];
             document.getElementsByClassName("mat-mdc-select-arrow-wrapper")[2].click();
@@ -144,9 +163,9 @@ async function getinoutvalues(material = "caustic") {
                 var item = material[k];
                 var itemcontent = item.textContent;
                 if (material1.trim().toLowerCase() == itemcontent.trim().toLowerCase()) {
-                    previnput=document.getElementsByClassName("value")[0].textContent.split("T")[0].trim();
+                    previnput = document.getElementsByClassName("value")[0].textContent.split("T")[0].trim();
                     item.click();
-
+ 
                     document.getElementsByClassName("mdc-button__label")[0].click();
                     await getinvalues(material1, shiftdetail[i - 1]);
                 }
@@ -155,6 +174,77 @@ async function getinoutvalues(material = "caustic") {
     }
     console.log(silosdata);
 }
-
+ 
 await getinoutvalues();
+function flagNotmatched(data) {
+    const result = JSON.parse(JSON.stringify(data));
+    Object.keys(result).forEach(material => {
+        const shifts = result[material];
+        Object.keys(shifts).forEach(shift => {
+            const values = shifts[shift]; 
+            const { isinputvaluematched, isoutputvaluematched, isstartendmatched } = values;
+            // Check if any flag is false
+            if ((!isinputvaluematched || !isoutputvaluematched || !isstartendmatched)&&(material!="silicate")) {
+                
+                console.log("%c⚠️ WARNING !!", "color:red;font-weight:bold;font-size:22px");
+                console.log(`Material: %c${material}`, "color:orange;font-weight:bold;");
+                console.log(`Shift: %c${shift}`, "color:blue;font-weight:bold;");
+               
+                // Show which specific condition failed
+                if (!isinputvaluematched) console.log("%c ❌ Input value not matched", "color:red;");
+                if (!isoutputvaluematched) console.log("%c ❌ Output value not matched", "color:red;");
+                if (!isstartendmatched) console.log("%c ❌ Start-End not matched", "color:red;");
 
+                console.log("──────────────────────────────");
+            }
+        });
+    });
+}
+function addValueMatchFlags(data) {
+    const result = JSON.parse(JSON.stringify(data));
+    Object.keys(result).forEach(material => {
+        const shifts = result[material];
+        Object.keys(shifts).forEach(shift => {
+            const values = shifts[shift];
+            values.isinputvaluematched = Math.abs(values.calculatedinput - values.inputvalue) <0.3;
+            values.isoutputvaluematched = Math.abs(values.calculatedoutout - values.outputvalue) <0.3;
+        });
+    });
+    return result;
+}
+
+
+ 
+async function transformdatatocsv(d, materiallist) {
+    // Header row
+    var csvdata = "material,,ShiftA,ShiftB,ShiftC,Daily,,ShiftA,ShiftB,ShiftC,Daily\n";
+ 
+    // Loop through each material
+    materiallist.forEach(material => {
+        let row = material;
+        row += ',';
+        row += ',' + d[material].shiftA.calculatedinput.toFixed(2);
+        row += ',' + d[material].shiftB.calculatedinput.toFixed(2);
+        row += ',' + d[material].shiftC.calculatedinput.toFixed(2);
+        row += ',' + d[material].Daily.calculatedinput.toFixed(2);
+        row += ',';
+        row += ',' + d[material].shiftA.calculatedoutout.toFixed(2);
+        row += ',' + d[material].shiftB.calculatedoutout.toFixed(2);
+        row += ',' + d[material].shiftC.calculatedoutout.toFixed(2);
+        row += ',' + d[material].Daily.calculatedoutout.toFixed(2);
+        csvdata += row + '\n';
+    });
+    var blob = new Blob([csvdata], { type: 'text/csv' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "material_data.csv"; // File name
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    var res=addValueMatchFlags(d);
+    flagNotmatched(res);
+    console.log(res);
+}
+
+// Usage
+await transformdatatocsv(silosdata, materiallist);
